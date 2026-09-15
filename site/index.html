@@ -153,7 +153,15 @@ const map = new maplibregl.Map({
   antialias:true
 });
 
-map.on("load", ()=> document.getElementById("loading").classList.add("gone"));
+map.on("load", ()=> { document.getElementById("loading").classList.add("gone"); map.resize(); });
+// Some embedded webviews miss the initial container measurement and never fire
+// ResizeObserver; re-assert the size until the canvas matches the container.
+addEventListener("resize", ()=> map.resize());
+(function sizeGuard(n){
+  const c = map.getCanvas(), el = map.getContainer();
+  if (parseInt(c.style.width||0) !== el.clientWidth || parseInt(c.style.height||0) !== el.clientHeight) map.resize();
+  if (n < 20) setTimeout(()=> sizeGuard(n+1), 500);
+})(0);
 map.on("error", e => { const l=document.getElementById("loading");
   if(!l.classList.contains("gone")) l.textContent = "GRID FAULT — " + (e.error&&e.error.message||"unknown"); });
 
