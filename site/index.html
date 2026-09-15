@@ -85,7 +85,7 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles" }
+    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=2" }
   },
   layers: [
     { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
@@ -93,6 +93,12 @@ const style = {
       paint:{ "fill-color":"#04161f", "fill-outline-color":"#11566d" } },
     { id:"waterway", type:"line", source:"atl", "source-layer":"waterway",
       paint:{ "line-color":"#11566d", "line-width":["interpolate",["linear"],["zoom"],9,.5,15,2] } },
+
+    { id:"park", type:"fill", source:"atl", "source-layer":"parks",
+      paint:{ "fill-color":"rgba(28,94,62,.16)" } },
+    { id:"park-line", type:"line", source:"atl", "source-layer":"parks",
+      paint:{ "line-color":"#2f8f66", "line-opacity":.45,
+        "line-width":["interpolate",["linear"],["zoom"],10,.4,16,1.4] } },
 
     { id:"bldg", type:"fill-extrusion", source:"atl", "source-layer":"buildings", minzoom:13,
       paint:{
@@ -126,6 +132,39 @@ const style = {
     { id:"road", type:"line", source:"atl", "source-layer":"roads",
       paint:{ "line-color": roadColor, "line-width": roadWidth,
         "line-opacity":["interpolate",["linear"],["zoom"],8,.85,14,1] } },
+
+    { id:"road-label", type:"symbol", source:"atl", "source-layer":"roads", minzoom:14,
+      filter:["has","name"],
+      layout:{ "symbol-placement":"line", "text-field":["get","name"],
+        "text-font":["Noto Sans Regular"], "symbol-spacing":380,
+        "text-size":["interpolate",["linear"],["zoom"],14,10,17,13] },
+      paint:{ "text-color":"#a8dced", "text-halo-color":"#000", "text-halo-width":1.6, "text-opacity":.9 } },
+
+    { id:"poi-dot", type:"circle", source:"atl", "source-layer":"pois", minzoom:14.5,
+      paint:{ "circle-radius":["interpolate",["linear"],["zoom"],14.5,1,17,2.4],
+        "circle-color": ["case",
+          ["has","shop"], "#7fe7ff",
+          ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffb14e",
+          ["has","tourism"], "#c9a0ff",
+          "#d8f4ff"],
+        "circle-opacity":["interpolate",["linear"],["zoom"],14.5,.35,16,.85] } },
+    { id:"poi-label", type:"symbol", source:"atl", "source-layer":"pois", minzoom:15.5,
+      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+        "text-size":["interpolate",["linear"],["zoom"],15.5,9.5,18,12],
+        "text-offset":[0,.9], "text-anchor":"top", "text-optional":false,
+        "text-padding":4 },
+      paint:{ "text-color": ["case",
+          ["has","shop"], "#9feaff",
+          ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffc97e",
+          ["has","tourism"], "#d7baff",
+          "#e8f8ff"],
+        "text-halo-color":"#000", "text-halo-width":1.5, "text-opacity":.92 } },
+
+    { id:"park-label", type:"symbol", source:"atl", "source-layer":"parklabels", minzoom:11.5,
+      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+        "text-size":["interpolate",["linear"],["zoom"],11.5,10,16,13],
+        "text-letter-spacing":.12, "text-max-width":8 },
+      paint:{ "text-color":"#7fd6a8", "text-halo-color":"#000", "text-halo-width":1.6, "text-opacity":.9 } },
 
     { id:"place-suburb", type:"symbol", source:"atl", "source-layer":"places", minzoom:11,
       filter:["in",["get","place"],["literal",["suburb","village"]]],

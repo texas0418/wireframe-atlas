@@ -17,8 +17,16 @@ osmium tags-filter -O metro.osm.pbf w/railway=rail,light_rail,subway,tram w/aero
 osmium tags-filter -O metro.osm.pbf a/natural=water a/landuse=reservoir,basin -o water.osm.pbf
 osmium tags-filter -O metro.osm.pbf w/waterway=river,canal,stream -o waterway.osm.pbf
 osmium tags-filter -O metro.osm.pbf n/place=city,town,village,suburb -o places.osm.pbf
+osmium tags-filter -O metro.osm.pbf \
+  a/leisure=park,golf_course,nature_reserve,garden,recreation_ground,stadium \
+  a/landuse=cemetery a/boundary=national_park -o parks.osm.pbf
+osmium tags-filter -O metro.osm.pbf \
+  nwr/shop \
+  nwr/amenity=restaurant,cafe,bar,pub,fast_food,food_court,ice_cream,cinema,theatre,nightclub,library,pharmacy,hospital,clinic,dentist,veterinary,bank,fuel,charging_station,post_office,school,college,university,place_of_worship,police,fire_station,townhall,courthouse,marketplace \
+  nwr/tourism=hotel,motel,museum,gallery,attraction,zoo,theme_park \
+  nwr/leisure=fitness_centre -o pois.osm.pbf
 
-for f in roads buildings rails water waterway places; do
+for f in roads buildings rails water waterway places parks pois; do
   osmium export -O "$f.osm.pbf" -f geojsonseq -o "$f.geojsonseq"
   echo "$f: $(du -h "$f.geojsonseq" | cut -f1)"
 done
@@ -47,8 +55,16 @@ tippecanoe -f -o water.pmtiles -l water -Z8 -z14 --simplification=4 --drop-small
 tippecanoe -f -o waterway.pmtiles -l waterway -Z9 -z14 -y waterway -y name --simplification=4 waterway.geojsonseq
 tippecanoe -f -o places.pmtiles -l places -Z8 -z14 -y place -y name -B0 places.geojsonseq
 
+python3 ../tools/labelpoints.py < parks.geojsonseq > parklabels.geojsonseq
+python3 ../tools/labelpoints.py < pois.geojsonseq > poipoints.geojsonseq
+tippecanoe -f -o parks-poly.pmtiles -l parks -Z10 -z14 -y leisure -y landuse \
+  --simplification=4 --drop-smallest-as-needed parks.geojsonseq
+tippecanoe -f -o parklabels.pmtiles -l parklabels -Z10 -z14 -y name -y leisure -y landuse -r1 parklabels.geojsonseq
+tippecanoe -f -o poipoints.pmtiles -l pois -Z14 -z14 -y name -y shop -y amenity -y tourism -y leisure -r1 \
+  --drop-densest-as-needed poipoints.geojsonseq
+
 echo "== 4/4 tile-join =="
-tile-join -f -o atl.pmtiles roads.pmtiles buildings.pmtiles rails.pmtiles water.pmtiles waterway.pmtiles places.pmtiles
+tile-join -f -o atl.pmtiles roads.pmtiles buildings.pmtiles rails.pmtiles water.pmtiles waterway.pmtiles places.pmtiles parks-poly.pmtiles parklabels.pmtiles poipoints.pmtiles
 ls -lh atl.pmtiles
 cp -f atl.pmtiles ../site/atl.pmtiles
 echo DONE
