@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atlanta Wireframe</title>
+<meta name="description" content="A live 3D wireframe of metro Atlanta. Every street, every building, drawn as light.">
+<link rel="stylesheet" href="vendor/maplibre-gl.css?v=1">
+<style>
+  :root{
+    --cyan:#7fe7ff; --cyan-dim:#1f6b7d; --amber:#ffb14e; --ink:#bfefff;
+  }
+  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden}
+  #map{position:absolute;inset:0;background:#000}
+  .hud{
+    position:absolute;z-index:10;pointer-events:none;
+    font:11px/1.5 "SF Mono",ui-monospace,Menlo,monospace;color:var(--ink);
+    text-shadow:0 0 6px rgba(127,231,255,.6);
+  }
+  #title{top:14px;left:16px;letter-spacing:.35em;font-size:13px}
+  #title b{color:var(--amber);text-shadow:0 0 8px rgba(255,177,78,.7)}
+  #title span{display:block;letter-spacing:.18em;font-size:9px;opacity:.65;margin-top:2px}
+  #readout{bottom:12px;left:16px;font-size:10px;opacity:.75;letter-spacing:.08em}
+  #ctrl{position:absolute;top:14px;right:14px;z-index:11;display:flex;flex-direction:column;gap:8px}
+  #ctrl button{
+    width:38px;height:38px;background:rgba(0,10,14,.72);color:var(--cyan);
+    border:1px solid rgba(127,231,255,.45);border-radius:6px;cursor:pointer;
+    font:12px "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.05em;
+    text-shadow:0 0 6px rgba(127,231,255,.6);box-shadow:0 0 10px rgba(127,231,255,.12);
+    -webkit-tap-highlight-color:transparent;
+  }
+  #ctrl button:hover{border-color:var(--cyan);box-shadow:0 0 14px rgba(127,231,255,.35)}
+  #ctrl button.on{color:var(--amber);border-color:rgba(255,177,78,.7);text-shadow:0 0 8px rgba(255,177,78,.7)}
+  .maplibregl-ctrl-attrib{background:rgba(0,0,0,.6)!important;color:#5c8a96!important;font-size:10px!important}
+  .maplibregl-ctrl-attrib a{color:#5c8a96!important}
+  #loading{
+    position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    background:#000;color:var(--cyan);font:12px "SF Mono",ui-monospace,Menlo,monospace;
+    letter-spacing:.3em;transition:opacity .8s;text-shadow:0 0 8px rgba(127,231,255,.6);
+  }
+  #loading.gone{opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="loading">ACQUIRING GRID&hellip;</div>
+<div class="hud" id="title">ATLANTA <b>WIREFRAME</b><span>METRO GRID &middot; OSM LIVE TRACE</span></div>
+<div class="hud" id="readout"></div>
+<div id="ctrl">
+  <button id="b3d" title="Toggle 3D tilt">3D</button>
+  <button id="bnorth" title="Face north">N</button>
+  <button id="bhome" title="Return to downtown">&#8982;</button>
+</div>
+<script src="vendor/maplibre-gl.js?v=1"></script>
+<script src="vendor/pmtiles.js?v=1"></script>
+<script>
+const BASE = location.origin + location.pathname.replace(/[^/]*$/, "");
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+
+const majors = ["motorway","motorway_link","trunk","trunk_link"];
+const primaries = ["primary","primary_link"];
+const secondaries = ["secondary","secondary_link"];
+const tertiaries = ["tertiary","tertiary_link","residential","unclassified","living_street"];
+
+const roadColor = ["match", ["get","highway"],
+  majors, "#ffb14e",
+  primaries, "#8fe9ff",
+  secondaries, "#55c4de",
+  tertiaries, "#20748a",
+  "#123d49"];
+
+const roadWidth = ["interpolate", ["exponential", 1.6], ["zoom"],
+  8,  ["match", ["get","highway"], majors, 1.4, primaries, .8, .5],
+  12, ["match", ["get","highway"], majors, 2.6, primaries, 1.8, secondaries, 1.4, .8],
+  16, ["match", ["get","highway"], majors, 8, primaries, 6, secondaries, 5, tertiaries, 3.5, 2]];
+
+const bldgHeight = ["max", 4,
+  ["case",
+    ["has","height"], ["to-number", ["get","height"], 0],
+    ["has","building:levels"], ["*", ["to-number", ["get","building:levels"], 0], 3.2],
+    5]];
+
+const style = {
+  version: 8,
+  glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
+  sources: {
+    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles" }
+  },
+  layers: [
+    { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
+    { id:"water", type:"fill", source:"atl", "source-layer":"water",
+      paint:{ "fill-color":"#04161f", "fill-outline-color":"#11566d" } },
+    { id:"waterway", type:"line", source:"atl", "source-layer":"waterway",
+      paint:{ "line-color":"#11566d", "line-width":["interpolate",["linear"],["zoom"],9,.5,15,2] } },
+
+    { id:"bldg", type:"fill-extrusion", source:"atl", "source-layer":"buildings", minzoom:13,
+      paint:{
+        "fill-extrusion-color":["interpolate",["linear"], bldgHeight,
+          4,"#07242e", 25,"#0d3644", 80,"#155466", 200,"#1f7c94"],
+        "fill-extrusion-height": bldgHeight,
+        "fill-extrusion-opacity":.92,
+        "fill-extrusion-vertical-gradient":true } },
+    { id:"bldg-line", type:"line", source:"atl", "source-layer":"buildings", minzoom:14,
+      paint:{ "line-color":"#2fa8c9",
+        "line-opacity":["interpolate",["linear"],["zoom"],14,.25,16,.8],
+        "line-width":.6 } },
+
+    { id:"rail", type:"line", source:"atl", "source-layer":"rails",
+      filter:["has","railway"],
+      paint:{ "line-color":"#8f9bff", "line-opacity":.55,
+        "line-dasharray":[3,2],
+        "line-width":["interpolate",["linear"],["zoom"],9,.6,15,2] } },
+    { id:"aero", type:"line", source:"atl", "source-layer":"rails",
+      filter:["has","aeroway"],
+      paint:{ "line-color":"#dff6ff",
+        "line-opacity":["match",["get","aeroway"],"runway",.9,.45],
+        "line-width":["interpolate",["exponential",1.6],["zoom"],
+          9, ["match",["get","aeroway"],"runway",1.5,.5],
+          15,["match",["get","aeroway"],"runway",14,3]] } },
+
+    { id:"road-glow", type:"line", source:"atl", "source-layer":"roads",
+      filter:["in", ["get","highway"], ["literal", majors.concat(primaries)]],
+      paint:{ "line-color": roadColor, "line-width":["interpolate",["exponential",1.6],["zoom"],8,3,16,16],
+        "line-blur":6, "line-opacity":.35 } },
+    { id:"road", type:"line", source:"atl", "source-layer":"roads",
+      paint:{ "line-color": roadColor, "line-width": roadWidth,
+        "line-opacity":["interpolate",["linear"],["zoom"],8,.85,14,1] } },
+
+    { id:"place-suburb", type:"symbol", source:"atl", "source-layer":"places", minzoom:11,
+      filter:["in",["get","place"],["literal",["suburb","village"]]],
+      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+        "text-size":10, "text-letter-spacing":.25, "text-transform":"uppercase" },
+      paint:{ "text-color":"#6fb7c9", "text-halo-color":"#000", "text-halo-width":1.4, "text-opacity":.75 } },
+    { id:"place-town", type:"symbol", source:"atl", "source-layer":"places", minzoom:9,
+      filter:["==",["get","place"],"town"],
+      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+        "text-size":12, "text-letter-spacing":.3, "text-transform":"uppercase" },
+      paint:{ "text-color":"#9fdcec", "text-halo-color":"#000", "text-halo-width":1.6 } },
+    { id:"place-city", type:"symbol", source:"atl", "source-layer":"places",
+      filter:["==",["get","place"],"city"],
+      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+        "text-size":["interpolate",["linear"],["zoom"],8,13,13,20], "text-letter-spacing":.4, "text-transform":"uppercase" },
+      paint:{ "text-color":"#d8f4ff", "text-halo-color":"#000", "text-halo-width":2 } }
+  ]
+};
+
+const map = new maplibregl.Map({
+  container:"map", style, hash:true,
+  center:[-84.390,33.755], zoom:10.5, pitch:0, bearing:0,
+  maxBounds:[[-85.6,32.8],[-83.1,34.9]],
+  attributionControl:{ compact:true, customAttribution:"&copy; OpenStreetMap contributors" },
+  antialias:true
+});
+
+map.on("load", ()=> document.getElementById("loading").classList.add("gone"));
+map.on("error", e => { const l=document.getElementById("loading");
+  if(!l.classList.contains("gone")) l.textContent = "GRID FAULT — " + (e.error&&e.error.message||"unknown"); });
+
+const readout = document.getElementById("readout");
+function updateReadout(){
+  const c = map.getCenter();
+  readout.textContent = c.lat.toFixed(4) + " N  " + Math.abs(c.lng).toFixed(4) + " W   Z" +
+    map.getZoom().toFixed(1) + "   HDG " + Math.round((map.getBearing()+360)%360) + "°";
+}
+map.on("move", updateReadout); updateReadout();
+
+const b3d = document.getElementById("b3d");
+b3d.onclick = ()=>{
+  const on = map.getPitch() < 5;
+  map.easeTo({ pitch: on?60:0, duration:900 });
+  b3d.classList.toggle("on", on);
+};
+map.on("pitchend", ()=> b3d.classList.toggle("on", map.getPitch()>=5));
+document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duration:700 });
+document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
+</script>
+</body>
+</html>
