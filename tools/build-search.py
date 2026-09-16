@@ -58,12 +58,17 @@ def add(name, kind, lon, lat):
     counts[kind] = counts.get(kind, 0) + 1
 
 
-for f in lines("places.geojsonseq"):
-    p = f.get("properties") or {}
-    if p.get("name") and f["geometry"]["type"] == "Point":
-        lon, lat = f["geometry"]["coordinates"]
-        kind = "c" if p.get("place") in ("city", "town") else "s"
-        add(p["name"], kind, lon, lat)
+# Once georgia exists as a state skeleton in search-src, the top-level GA
+# roads/places exports are redundant — skip them to avoid duplicate entries.
+GA_IS_STATE = os.path.exists(os.path.join(DATA, "search-src", "georgia-roads.geojsonseq"))
+
+if not GA_IS_STATE:
+    for f in lines("places.geojsonseq"):
+        p = f.get("properties") or {}
+        if p.get("name") and f["geometry"]["type"] == "Point":
+            lon, lat = f["geometry"]["coordinates"]
+            kind = "c" if p.get("place") in ("city", "town") else "s"
+            add(p["name"], kind, lon, lat)
 
 for f in lines("parklabels.geojsonseq"):
     p = f.get("properties") or {}
@@ -103,7 +108,8 @@ def add_places(fn):
             lon, lat = f["geometry"]["coordinates"]
             add(p["name"], "c" if p.get("place") in ("city", "town") else "s", lon, lat)
 
-add_roads("roads.geojsonseq")
+if not GA_IS_STATE:
+    add_roads("roads.geojsonseq")
 
 # Per-state skeleton exports (see build-state.sh)
 SRCDIR = os.path.join(DATA, "search-src")

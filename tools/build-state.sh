@@ -10,9 +10,14 @@ cd "$(dirname "$0")/../data"
 mkdir -p states-src search-src ../site/tiles
 
 echo "== $SLUG: download =="
-curl -sL -C - -o "states-src/$SLUG.osm.pbf" \
-  "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" || true
-osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null  # fails loudly on a bad/partial file
+# A valid existing file is used as-is. Never resume-append: Geofabrik files
+# change daily, so -C - onto an older copy corrupts it (learned the hard way).
+if ! osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null 2>&1; then
+  curl -sL -o "states-src/$SLUG.osm.pbf.part" \
+    "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf"
+  mv -f "states-src/$SLUG.osm.pbf.part" "states-src/$SLUG.osm.pbf"
+fi
+osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null  # fails loudly on a bad file
 ls -lh "states-src/$SLUG.osm.pbf"
 
 echo "== $SLUG: filter =="
