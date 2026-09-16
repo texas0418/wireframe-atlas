@@ -1,26 +1,31 @@
 #!/bin/bash
 # Build atl.pmtiles from georgia-latest.osm.pbf
-# Bbox covers the full metro: Newnan/Cartersville/Gainesville/Covington corners.
+# Default: the WHOLE extract (all of Georgia). Set BBOX=minlon,minlat,maxlon,maxlat to clip.
 set -euo pipefail
 cd "$(dirname "$0")/../data"
 
-BBOX="-84.97,33.30,-83.75,34.36"
-
-echo "== 1/4 clip metro =="
-osmium extract -O -b "$BBOX" georgia-latest.osm.pbf -o metro.osm.pbf
-osmium fileinfo -e metro.osm.pbf | grep -E "Number of|Bounding"
+SRC=georgia-latest.osm.pbf
+echo "== 1/4 clip =="
+if [ -n "${BBOX:-}" ]; then
+  osmium extract -O -b "$BBOX" "$SRC" -o metro.osm.pbf
+  SRC=metro.osm.pbf
+else
+  echo "no BBOX set - building the whole extract: $SRC"
+fi
+osmium fileinfo -e "$SRC" | grep -E "Number of|Bounding"
+cp -f /dev/null .src-name; echo "$SRC" > .src-name
 
 echo "== 2/4 filter + export layers =="
-osmium tags-filter -O metro.osm.pbf w/highway -o roads.osm.pbf
-osmium tags-filter -O metro.osm.pbf a/building -o buildings.osm.pbf
-osmium tags-filter -O metro.osm.pbf w/railway=rail,light_rail,subway,tram w/aeroway=runway,taxiway -o rails.osm.pbf
-osmium tags-filter -O metro.osm.pbf a/natural=water a/landuse=reservoir,basin -o water.osm.pbf
-osmium tags-filter -O metro.osm.pbf w/waterway=river,canal,stream -o waterway.osm.pbf
-osmium tags-filter -O metro.osm.pbf n/place=city,town,village,suburb -o places.osm.pbf
-osmium tags-filter -O metro.osm.pbf \
+osmium tags-filter -O $SRC w/highway -o roads.osm.pbf
+osmium tags-filter -O $SRC a/building -o buildings.osm.pbf
+osmium tags-filter -O $SRC w/railway=rail,light_rail,subway,tram w/aeroway=runway,taxiway -o rails.osm.pbf
+osmium tags-filter -O $SRC a/natural=water a/landuse=reservoir,basin -o water.osm.pbf
+osmium tags-filter -O $SRC w/waterway=river,canal,stream -o waterway.osm.pbf
+osmium tags-filter -O $SRC n/place=city,town,village,suburb -o places.osm.pbf
+osmium tags-filter -O "$SRC" \
   a/leisure=park,golf_course,nature_reserve,garden,recreation_ground,stadium \
   a/landuse=cemetery a/boundary=national_park -o parks.osm.pbf
-osmium tags-filter -O metro.osm.pbf \
+osmium tags-filter -O "$SRC" \
   nwr/shop \
   nwr/amenity=restaurant,cafe,bar,pub,fast_food,food_court,ice_cream,cinema,theatre,nightclub,library,pharmacy,hospital,clinic,dentist,veterinary,bank,fuel,charging_station,post_office,school,college,university,place_of_worship,police,fire_station,townhall,courthouse,marketplace \
   nwr/tourism=hotel,motel,museum,gallery,attraction,zoo,theme_park \
@@ -67,4 +72,7 @@ echo "== 4/4 tile-join =="
 tile-join -f -o atl.pmtiles roads.pmtiles buildings.pmtiles rails.pmtiles water.pmtiles waterway.pmtiles places.pmtiles parks-poly.pmtiles parklabels.pmtiles poipoints.pmtiles
 ls -lh atl.pmtiles
 cp -f atl.pmtiles ../site/atl.pmtiles
+
+echo "== 5/5 search index =="
+python3 ../tools/build-search.py
 echo DONE

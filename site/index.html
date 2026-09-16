@@ -39,6 +39,24 @@
     letter-spacing:.3em;transition:opacity .8s;text-shadow:0 0 8px rgba(127,231,255,.6);
   }
   #loading.gone{opacity:0;pointer-events:none}
+  #search{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:12;width:min(420px,66vw)}
+  #q{width:100%;box-sizing:border-box;background:rgba(0,10,14,.78);color:#d8f4ff;
+    border:1px solid rgba(127,231,255,.45);border-radius:6px;outline:none;
+    font:12px "SF Mono",ui-monospace,Menlo,monospace;letter-spacing:.1em;padding:9px 12px;
+    text-transform:uppercase}
+  #q::placeholder{color:#3f7d8f}
+  #q:focus{border-color:#7fe7ff;box-shadow:0 0 14px rgba(127,231,255,.25)}
+  #results{margin-top:6px;background:rgba(0,8,12,.93);border:1px solid rgba(127,231,255,.3);
+    border-radius:6px;max-height:46vh;overflow:auto}
+  .res{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;
+    font:11px "SF Mono",ui-monospace,Menlo,monospace;color:#bfefff;align-items:baseline}
+  .res b{font-weight:normal;color:#e8f8ff;text-shadow:0 0 6px rgba(127,231,255,.4)}
+  .res .rk{font-size:9px;letter-spacing:.18em;white-space:nowrap}
+  .res:hover,.res.sel{background:rgba(127,231,255,.12)}
+  .pulse{width:18px;height:18px;border-radius:50%;border:2px solid #7fe7ff;
+    box-shadow:0 0 12px #7fe7ff;animation:pw 1.4s ease-out infinite}
+  @keyframes pw{0%{transform:scale(.5);opacity:1}100%{transform:scale(2.4);opacity:0}}
+  @media (max-width:640px){#search{top:52px;width:min(420px,88vw)}}
 </style>
 </head>
 <body>
@@ -46,6 +64,10 @@
 <div id="loading">ACQUIRING GRID&hellip;</div>
 <div class="hud" id="title">ATLANTA <b>WIREFRAME</b><span>METRO GRID &middot; OSM LIVE TRACE</span></div>
 <div class="hud" id="readout"></div>
+<div id="search">
+  <input id="q" type="search" placeholder="Search the grid" autocomplete="off" spellcheck="false">
+  <div id="results" hidden></div>
+</div>
 <div id="ctrl">
   <button id="b3d" title="Toggle 3D tilt">3D</button>
   <button id="bnorth" title="Face north">N</button>
@@ -85,7 +107,7 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=2" }
+    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=3" }
   },
   layers: [
     { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
@@ -187,7 +209,7 @@ const style = {
 const map = new maplibregl.Map({
   container:"map", style, hash:true,
   center:[-84.390,33.755], zoom:10.5, pitch:0, bearing:0,
-  maxBounds:[[-85.6,32.8],[-83.1,34.9]],
+  maxBounds:[[-86.4,29.9],[-80.0,35.7]],
   attributionControl:{ compact:true, customAttribution:"&copy; OpenStreetMap contributors" },
   antialias:true
 });
@@ -221,6 +243,72 @@ b3d.onclick = ()=>{
 map.on("pitchend", ()=> b3d.classList.toggle("on", map.getPitch()>=5));
 document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duration:700 });
 document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
+
+// ---- Search: static gzipped shards, no server, no keys ----
+const SEARCHV = 1, SH = {};
+const KIND = { c:["CITY",11.8], s:["AREA",13.2], r:["STREET",15.6], k:["PARK",14.2], p:["PLACE",16.8] };
+const KCOLOR = { c:"#d8f4ff", s:"#9fdcec", r:"#a8dced", k:"#7fd6a8", p:"#ffc97e" };
+const snorm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+async function loadShard(ch){
+  if (SH[ch]) return SH[ch];
+  SH[ch] = (async ()=>{
+    try{
+      const r = await fetch(BASE + "search/" + ch + ".bin?v=" + SEARCHV);
+      if (!r.ok) return [];
+      let buf = await r.arrayBuffer();
+      const u8 = new Uint8Array(buf);
+      if (u8[0] === 0x1f && u8[1] === 0x8b)
+        buf = await new Response(new Response(buf).body.pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+      return JSON.parse(new TextDecoder().decode(buf)).map(e =>
+        ({ name:e[0], kind:e[1], lon:e[2], lat:e[3], n:snorm(e[0]) }));
+    }catch(_){ return []; }
+  })();
+  return SH[ch];
+}
+const qEl = document.getElementById("q"), rEl = document.getElementById("results");
+let hits = [], sel = -1, qTimer;
+function goTo(h){
+  rEl.hidden = true; qEl.blur();
+  map.flyTo({ center:[h.lon,h.lat], zoom:KIND[h.kind][1], duration:2200 });
+  const el = document.createElement("div"); el.className = "pulse";
+  const mk = new maplibregl.Marker({ element:el }).setLngLat([h.lon,h.lat]).addTo(map);
+  setTimeout(()=> mk.remove(), 7000);
+}
+function render(){
+  rEl.innerHTML = ""; rEl.hidden = !hits.length;
+  hits.forEach((h,i)=>{
+    const d = document.createElement("div");
+    d.className = "res" + (i===sel ? " sel" : "");
+    d.innerHTML = "<b></b><span class='rk'></span>";
+    d.firstChild.textContent = h.name;
+    d.lastChild.textContent = KIND[h.kind][0];
+    d.lastChild.style.color = KCOLOR[h.kind];
+    d.onmousedown = e => { e.preventDefault(); goTo(h); };
+    rEl.appendChild(d);
+  });
+}
+async function runSearch(){
+  const nq = snorm(qEl.value.trim());
+  if (nq.length < 2){ hits = []; render(); return; }
+  const ch = (nq[0] >= "a" && nq[0] <= "z") ? nq[0] : "0";
+  const entries = await loadShard(ch);
+  if (snorm(qEl.value.trim()) !== nq) return;
+  const c = map.getCenter();
+  hits = entries.filter(e => e.n.includes(nq))
+    .map(e => ({ ...e, d: (e.lon-c.lng)*(e.lon-c.lng)*.69 + (e.lat-c.lat)*(e.lat-c.lat),
+                 pre: e.n.startsWith(nq) ? 0 : 1 }))
+    .sort((a,b)=> a.pre-b.pre || a.d-b.d).slice(0,12);
+  sel = -1; render();
+}
+qEl.addEventListener("input", ()=>{ clearTimeout(qTimer); qTimer = setTimeout(runSearch, 130); });
+qEl.addEventListener("keydown", e=>{
+  if (e.key === "ArrowDown"){ sel = Math.min(sel+1, hits.length-1); render(); e.preventDefault(); }
+  else if (e.key === "ArrowUp"){ sel = Math.max(sel-1, -1); render(); e.preventDefault(); }
+  else if (e.key === "Enter" && hits.length){ goTo(hits[Math.max(sel,0)]); }
+  else if (e.key === "Escape"){ rEl.hidden = true; qEl.blur(); }
+});
+qEl.addEventListener("focus", ()=>{ if (hits.length) rEl.hidden = false; });
+qEl.addEventListener("blur", ()=> setTimeout(()=>{ rEl.hidden = true; }, 150));
 </script>
 </body>
 </html>
