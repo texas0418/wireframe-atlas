@@ -108,10 +108,26 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=5" }
+    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=5" },
+    ne: { type: "vector", url: "pmtiles://" + BASE + "boundaries.pmtiles?v=1" }
   },
   layers: [
     { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
+    { id:"ne-lakes", type:"fill", source:"ne", "source-layer":"lakes", maxzoom:9,
+      paint:{ "fill-color":"#04161f" } },
+    { id:"ne-coast", type:"line", source:"ne", "source-layer":"coast", maxzoom:10,
+      paint:{ "line-color":"#1d5a70",
+        "line-width":["interpolate",["linear"],["zoom"],3,.8,8,1.6],
+        "line-opacity":["interpolate",["linear"],["zoom"],7.5,.9,9.5,0] } },
+    { id:"ne-borders", type:"line", source:"ne", "source-layer":"borders", maxzoom:10,
+      paint:{ "line-color":"#174a5c",
+        "line-width":["interpolate",["linear"],["zoom"],3,.7,8,1.3],
+        "line-opacity":["interpolate",["linear"],["zoom"],3,.55,7.5,.55,9.5,0] } },
+    { id:"ne-statelines", type:"line", source:"ne", "source-layer":"statelines", maxzoom:10,
+      paint:{ "line-color":"#123d49",
+        "line-width":["interpolate",["linear"],["zoom"],3,.5,8,1.2],
+        "line-opacity":["interpolate",["linear"],["zoom"],3,.5,7.5,.5,9.5,0],
+        "line-dasharray":[4,2] } },
     { id:"water", type:"fill", source:"atl", "source-layer":"water",
       paint:{ "fill-color":"#04161f", "fill-outline-color":"#11566d" } },
     { id:"waterway", type:"line", source:"atl", "source-layer":"waterway",
@@ -210,7 +226,7 @@ const style = {
 const map = new maplibregl.Map({
   container:"map", style, hash:true,
   center:[-84.390,33.755], zoom:10.5, pitch:0, bearing:0,
-  minZoom:4, maxBounds:[[-179.9,15.0],[-60.0,72.5]],
+  minZoom:3, maxBounds:[[-179.9,10.0],[-50.0,74.0]],
   attributionControl:{ compact:true, customAttribution:"&copy; OpenStreetMap contributors" },
   antialias:true
 });
