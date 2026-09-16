@@ -93,6 +93,7 @@ const roadColor = ["match", ["get","highway"],
   "#123d49"];
 
 const roadWidth = ["interpolate", ["exponential", 1.6], ["zoom"],
+  5,  ["match", ["get","highway"], majors, .7, .4],
   8,  ["match", ["get","highway"], majors, 1.4, primaries, .8, .5],
   12, ["match", ["get","highway"], majors, 2.6, primaries, 1.8, secondaries, 1.4, .8],
   16, ["match", ["get","highway"], majors, 8, primaries, 6, secondaries, 5, tertiaries, 3.5, 2]];
@@ -107,7 +108,7 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=3" }
+    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=4" }
   },
   layers: [
     { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
@@ -201,7 +202,7 @@ const style = {
     { id:"place-city", type:"symbol", source:"atl", "source-layer":"places",
       filter:["==",["get","place"],"city"],
       layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":["interpolate",["linear"],["zoom"],8,13,13,20], "text-letter-spacing":.4, "text-transform":"uppercase" },
+        "text-size":["interpolate",["linear"],["zoom"],5,10.5,8,13,13,20], "text-letter-spacing":.4, "text-transform":"uppercase" },
       paint:{ "text-color":"#d8f4ff", "text-halo-color":"#000", "text-halo-width":2 } }
   ]
 };
@@ -209,7 +210,7 @@ const style = {
 const map = new maplibregl.Map({
   container:"map", style, hash:true,
   center:[-84.390,33.755], zoom:10.5, pitch:0, bearing:0,
-  maxBounds:[[-86.4,29.9],[-80.0,35.7]],
+  minZoom:4, maxBounds:[[-179.9,15.0],[-60.0,72.5]],
   attributionControl:{ compact:true, customAttribution:"&copy; OpenStreetMap contributors" },
   antialias:true
 });
@@ -245,7 +246,7 @@ document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duratio
 document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
 
 // ---- Search: static gzipped shards, no server, no keys ----
-const SEARCHV = 1, SH = {};
+const SEARCHV = 2, SH = {};
 const KIND = { c:["CITY",11.8], s:["AREA",13.2], r:["STREET",15.6], k:["PARK",14.2], p:["PLACE",16.8] };
 const KCOLOR = { c:"#d8f4ff", s:"#9fdcec", r:"#a8dced", k:"#7fd6a8", p:"#ffc97e" };
 const snorm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
