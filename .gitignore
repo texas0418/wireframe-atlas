@@ -2,3 +2,6 @@ data/
 site/atl.pmtiles
 site/fonts/
 .DS_Store
+site/tiles/
+data/states-src/
+data/search-src/
