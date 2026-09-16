@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Atlanta Wireframe</title>
-<meta name="description" content="A live 3D wireframe of metro Atlanta. Every street, every building, drawn as light.">
+<title>Wireframe Atlas</title>
+<meta name="description" content="A live 3D wireframe of America, growing state by state. Every street drawn as light.">
 <link rel="stylesheet" href="vendor/maplibre-gl.css?v=1">
 <style>
   :root{
@@ -62,7 +62,7 @@
 <body>
 <div id="map"></div>
 <div id="loading">ACQUIRING GRID&hellip;</div>
-<div class="hud" id="title">ATLANTA <b>WIREFRAME</b><span>METRO GRID &middot; OSM LIVE TRACE</span></div>
+<div class="hud" id="title">WIREFRAME <b>ATLAS</b><span>USA GRID &middot; OSM LIVE TRACE</span></div>
 <div class="hud" id="readout"></div>
 <div id="search">
   <input id="q" type="search" placeholder="Search the grid" autocomplete="off" spellcheck="false">
@@ -262,8 +262,9 @@ document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duratio
 document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
 
 // ---- Skeleton states: one tile file per state, discovered via manifest ----
-const SKEL_LAYERS = ["water","waterway","rail","aero","road-glow","road","road-label",
-                     "place-suburb","place-town","place-city"];
+const SKEL_LAYERS = ["water","waterway","park","park-line","bldg","bldg-line",
+                     "rail","aero","road-glow","road","poi-dot","road-label",
+                     "poi-label","park-label","place-suburb","place-town","place-city"];
 function addStateSource(slug, v){
   const src = "st-" + slug;
   if (map.getSource(src)) return;

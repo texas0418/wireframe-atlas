@@ -120,6 +120,18 @@ if os.path.isdir(SRCDIR):
             add_roads(rel)
         elif fn.endswith("-places.geojsonseq"):
             add_places(rel)
+        elif fn.endswith("-parks.geojsonseq"):
+            for f in lines(rel):
+                p = f.get("properties") or {}
+                if p.get("name"):
+                    lon, lat = f["geometry"]["coordinates"]
+                    add(p["name"], "k", lon, lat)
+        elif fn.endswith("-pois.geojsonseq"):
+            for f in lines(rel):
+                p = f.get("properties") or {}
+                if p.get("name"):
+                    lon, lat = f["geometry"]["coordinates"]
+                    add(p["name"], "p", lon, lat)
 
 os.makedirs(OUT, exist_ok=True)
 for old in os.listdir(OUT):

@@ -1,6 +1,6 @@
-# Atlanta Wireframe
+# Wireframe Atlas
 
-A 3D wireframe of metro Atlanta — every street and building drawn as light on black.
+A 3D wireframe of America, growing state by state — every street and building drawn as light on black. Started as metro Atlanta.
 Built from OpenStreetMap data, rendered with MapLibre GL, served as a single static
 PMTiles file. No server code, no API keys, no per-view cost.
 
