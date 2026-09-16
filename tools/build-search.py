@@ -78,21 +78,42 @@ for f in lines("poipoints.geojsonseq"):
         add(p["name"], "p", lon, lat)
 
 # Roads: one entry per name per ~0.1 degree cell, so a long street yields a
-# few entries across town rather than one per OSM segment.
-for f in lines("roads.geojsonseq"):
-    p = f.get("properties") or {}
-    name = p.get("name")
-    if not name:
-        continue
-    mid = line_mid(f.get("geometry") or {})
-    if not mid:
-        continue
-    lon, lat = mid[0], mid[1]
-    key = (norm(name), round(lon * 10), round(lat * 10))
-    if key in seen_roads:
-        continue
-    seen_roads.add(key)
-    add(name, "r", lon, lat)
+# few entries across town rather than one per OSM segment. The cell dedupe is
+# global, so border roads appearing in two state extracts collapse to one.
+def add_roads(fn):
+    for f in lines(fn):
+        p = f.get("properties") or {}
+        name = p.get("name")
+        if not name:
+            continue
+        mid = line_mid(f.get("geometry") or {})
+        if not mid:
+            continue
+        lon, lat = mid[0], mid[1]
+        key = (norm(name), round(lon * 10), round(lat * 10))
+        if key in seen_roads:
+            continue
+        seen_roads.add(key)
+        add(name, "r", lon, lat)
+
+def add_places(fn):
+    for f in lines(fn):
+        p = f.get("properties") or {}
+        if p.get("name") and f["geometry"]["type"] == "Point":
+            lon, lat = f["geometry"]["coordinates"]
+            add(p["name"], "c" if p.get("place") in ("city", "town") else "s", lon, lat)
+
+add_roads("roads.geojsonseq")
+
+# Per-state skeleton exports (see build-state.sh)
+SRCDIR = os.path.join(DATA, "search-src")
+if os.path.isdir(SRCDIR):
+    for fn in sorted(os.listdir(SRCDIR)):
+        rel = os.path.join("search-src", fn)
+        if fn.endswith("-roads.geojsonseq"):
+            add_roads(rel)
+        elif fn.endswith("-places.geojsonseq"):
+            add_places(rel)
 
 os.makedirs(OUT, exist_ok=True)
 for old in os.listdir(OUT):

@@ -245,8 +245,33 @@ map.on("pitchend", ()=> b3d.classList.toggle("on", map.getPitch()>=5));
 document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duration:700 });
 document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
 
+// ---- Skeleton states: one tile file per state, discovered via manifest ----
+const SKEL_LAYERS = ["water","waterway","rail","aero","road-glow","road","road-label",
+                     "place-suburb","place-town","place-city"];
+function addStateSource(slug, v){
+  const src = "st-" + slug;
+  if (map.getSource(src)) return;
+  map.addSource(src, { type:"vector", url:"pmtiles://" + BASE + "tiles/" + slug + ".pmtiles?v=" + v });
+  const layers = map.getStyle().layers;
+  SKEL_LAYERS.forEach(id => {
+    const base = layers.find(l => l.id === id);
+    if (!base) return;
+    const c = JSON.parse(JSON.stringify(base));
+    c.id = src + "-" + id; c.source = src;
+    map.addLayer(c, c.type === "symbol" ? undefined : "road-label");
+  });
+}
+fetch(BASE + "tiles/manifest.json?cb=" + Date.now())
+  .then(r => r.ok ? r.json() : null)
+  .then(man => {
+    if (!man || !man.states) return;
+    SEARCHV = man.v || SEARCHV;
+    const addAll = () => man.states.forEach(s => addStateSource(s, man.v));
+    if (map.isStyleLoaded()) addAll(); else map.once("load", addAll);
+  }).catch(()=>{});
+
 // ---- Search: static gzipped shards, no server, no keys ----
-const SEARCHV = 2, SH = {};
+let SEARCHV = 2; const SH = {};
 const KIND = { c:["CITY",11.8], s:["AREA",13.2], r:["STREET",15.6], k:["PARK",14.2], p:["PLACE",16.8] };
 const KCOLOR = { c:"#d8f4ff", s:"#9fdcec", r:"#a8dced", k:"#7fd6a8", p:"#ffc97e" };
 const snorm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
