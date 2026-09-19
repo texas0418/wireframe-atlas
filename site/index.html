@@ -77,6 +77,8 @@
 <script src="vendor/pmtiles.js?v=1"></script>
 <script>
 const BASE = location.origin + location.pathname.replace(/[^/]*$/, "");
+// Heavy tile files stream from R2; the page, fonts, and search stay same-origin.
+const TILES = location.hostname === "atlas.simonbuilds.app" ? "https://tiles.simonbuilds.app/" : BASE;
 const protocol = new pmtiles.Protocol();
 maplibregl.addProtocol("pmtiles", protocol.tile);
 
@@ -108,8 +110,8 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + BASE + "atl.pmtiles?v=5" },
-    ne: { type: "vector", url: "pmtiles://" + BASE + "boundaries.pmtiles?v=1" }
+    atl: { type: "vector", url: "pmtiles://" + TILES + "atl.pmtiles?v=5" },
+    ne: { type: "vector", url: "pmtiles://" + TILES + "boundaries.pmtiles?v=1" }
   },
   layers: [
     { id:"bg", type:"background", paint:{ "background-color":"#000000" } },
@@ -268,7 +270,7 @@ const SKEL_LAYERS = ["water","waterway","park","park-line","bldg","bldg-line",
 function addStateSource(slug, v){
   const src = "st-" + slug;
   if (map.getSource(src)) return;
-  map.addSource(src, { type:"vector", url:"pmtiles://" + BASE + "tiles/" + slug + ".pmtiles?v=" + v });
+  map.addSource(src, { type:"vector", url:"pmtiles://" + TILES + "tiles/" + slug + ".pmtiles?v=" + v });
   const layers = map.getStyle().layers;
   SKEL_LAYERS.forEach(id => {
     const base = layers.find(l => l.id === id);
