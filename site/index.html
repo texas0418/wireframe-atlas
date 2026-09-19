@@ -280,7 +280,7 @@ function addStateSource(slug, v){
     map.addLayer(c, c.type === "symbol" ? undefined : "road-label");
   });
 }
-fetch(BASE + "tiles/manifest.json?cb=" + Date.now())
+fetch(TILES + "tiles/manifest.json?cb=" + Date.now())
   .then(r => r.ok ? r.json() : null)
   .then(man => {
     if (!man || !man.states) return;
