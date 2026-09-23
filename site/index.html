@@ -189,17 +189,21 @@ const style = {
           ["has","tourism"], "#c9a0ff",
           "#d8f4ff"],
         "circle-opacity":["interpolate",["linear"],["zoom"],14.5,.35,16,.85] } },
-    { id:"poi-label", type:"symbol", source:"atl", "source-layer":"pois", minzoom:15.5,
+    // Labels arrive a half zoom after the dots and fade up, so the buildings
+    // read first. text-optional lets a name drop rather than shove its dot;
+    // the padding is what thins Manhattan without touching sparser cities.
+    { id:"poi-label", type:"symbol", source:"atl", "source-layer":"pois", minzoom:16,
       layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":["interpolate",["linear"],["zoom"],15.5,9.5,18,12],
-        "text-offset":[0,.9], "text-anchor":"top", "text-optional":false,
-        "text-padding":4 },
+        "text-size":["interpolate",["linear"],["zoom"],16,9.5,18,12],
+        "text-offset":[0,.9], "text-anchor":"top", "text-optional":true,
+        "text-padding":["interpolate",["linear"],["zoom"],16,9,18,4] },
       paint:{ "text-color": ["case",
           ["has","shop"], "#9feaff",
           ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffc97e",
           ["has","tourism"], "#d7baff",
           "#e8f8ff"],
-        "text-halo-color":"#000", "text-halo-width":1.5, "text-opacity":.92 } },
+        "text-halo-color":"#000", "text-halo-width":1.5,
+        "text-opacity":["interpolate",["linear"],["zoom"],16,0,16.6,.92] } },
 
     { id:"park-label", type:"symbol", source:"atl", "source-layer":"parklabels", minzoom:11.5,
       layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
