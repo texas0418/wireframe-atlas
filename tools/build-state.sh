@@ -13,8 +13,21 @@ echo "== $SLUG: download =="
 # A valid existing file is used as-is. Never resume-append: Geofabrik files
 # change daily, so -C - onto an older copy corrupts it (learned the hard way).
 if ! osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null 2>&1; then
-  curl -sL -o "states-src/$SLUG.osm.pbf.part" \
-    "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf"
+  # Resolve -latest to its DATED url. That file never changes, so resuming
+  # against it is safe; resuming against -latest is what corrupts a download
+  # when the daily rebuild lands mid-transfer.
+  PINNED=$(curl -sI "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
+           | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r')
+  [ -n "$PINNED" ] || PINNED="https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf"
+  STAMP="states-src/$SLUG.url"
+  if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PINNED" ] && [ -f "states-src/$SLUG.osm.pbf.part" ]; then
+    echo "resuming $(du -h "states-src/$SLUG.osm.pbf.part" | cut -f1) of $PINNED"
+    curl -sL -C - -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
+  else
+    rm -f "states-src/$SLUG.osm.pbf.part"
+    echo "$PINNED" > "$STAMP"
+    curl -sL -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
+  fi
   mv -f "states-src/$SLUG.osm.pbf.part" "states-src/$SLUG.osm.pbf"
 fi
 osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null  # fails loudly on a bad file
