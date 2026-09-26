@@ -9,6 +9,10 @@ SLUG=$1
 cd "$(dirname "$0")/../data"
 mkdir -p states-src search-src ../site/tiles
 
+# Geofabrik transfers stall on a weak link. Retry transient failures and
+# count a <10KB/s crawl for 30s as one, so --retry resumes instead of the
+# whole build dying at 80% (cost us PA, MA and HI before this existed).
+CURL_HARDEN="--retry 6 --retry-delay 5 --retry-all-errors --speed-limit 10240 --speed-time 30"
 echo "== $SLUG: download =="
 # A valid existing file is used as-is. Never resume-append: Geofabrik files
 # change daily, so -C - onto an older copy corrupts it (learned the hard way).
@@ -22,11 +26,11 @@ if ! osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null 2>&1; then
   STAMP="states-src/$SLUG.url"
   if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PINNED" ] && [ -f "states-src/$SLUG.osm.pbf.part" ]; then
     echo "resuming $(du -h "states-src/$SLUG.osm.pbf.part" | cut -f1) of $PINNED"
-    curl -sL -C - -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
+    curl -sL -C - $CURL_HARDEN -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
   else
     rm -f "states-src/$SLUG.osm.pbf.part"
     echo "$PINNED" > "$STAMP"
-    curl -sL -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
+    curl -sL $CURL_HARDEN -o "states-src/$SLUG.osm.pbf.part" "$PINNED"
   fi
   mv -f "states-src/$SLUG.osm.pbf.part" "states-src/$SLUG.osm.pbf"
 fi
