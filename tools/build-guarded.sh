@@ -24,18 +24,12 @@ if [ -f "$HOME/.claude/netbudget/STOP_NETWORK" ]; then
 fi
 
 # --- measure, and insist on a real number
-# Resolve AND measure with a 1-byte range GET. HEAD is unusable here:
-# Geofabrik's cache intermittently 301s -latest to itself with a trailing
-# slash, looping forever, while GET follows to the dated file correctly.
-HDR=$(curl -sL --max-time 30 -r 0-0 -D - -o /dev/null \
-      -w 'EFFECTIVE %{url_effective}\n' \
-      "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf")
-PINNED=$(printf '%s\n' "$HDR" | awk '/^EFFECTIVE /{print $2}' | tr -d '\r' | sed 's:/*$::')
-if [ -z "$PINNED" ]; then echo "ABORT: could not resolve $SLUG to a dated url"; exit 1; fi
-# Content-Range: bytes 0-0/197357173 -> total is after the slash in field 3
-MB=$(printf '%s\n' "$HDR" | awk 'tolower($1)=="content-range:"{print $3}' \
-     | awk -F/ '{print $2}' | tr -cd '0-9' | tail -1 \
-     | awk 'NF{printf "%.0f", $1/1048576}')
+# Resolve + measure via the shared resolver (handles Geofabrik's flaky
+# -latest alias by falling back to the directory index).
+RES=$(bash tools/resolve-extract.sh "$SLUG") || { echo "ABORT: could not resolve $SLUG"; exit 1; }
+PINNED=${RES%% *}
+BYTES=${RES##* }
+MB=$(awk -v b="$BYTES" 'BEGIN{printf "%.0f", b/1048576}')
 case "$MB" in ''|*[!0-9]*) echo "ABORT: measurement failed for $SLUG (got '${MB}')"; exit 1;; esac
 echo "$SLUG measured ${MB}MB"
 
