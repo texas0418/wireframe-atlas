@@ -32,8 +32,10 @@ HDR=$(curl -sL --max-time 30 -r 0-0 -D - -o /dev/null \
       "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf")
 PINNED=$(printf '%s\n' "$HDR" | awk '/^EFFECTIVE /{print $2}' | tr -d '\r' | sed 's:/*$::')
 if [ -z "$PINNED" ]; then echo "ABORT: could not resolve $SLUG to a dated url"; exit 1; fi
-MB=$(printf '%s\n' "$HDR" | awk 'tolower($1)=="content-range:"{print $2}' \
-     | awk -F/ '{print $2}' | tr -cd '0-9' | tail -1 | awk '{printf "%.0f", $1/1048576}')
+# Content-Range: bytes 0-0/197357173 -> total is after the slash in field 3
+MB=$(printf '%s\n' "$HDR" | awk 'tolower($1)=="content-range:"{print $3}' \
+     | awk -F/ '{print $2}' | tr -cd '0-9' | tail -1 \
+     | awk 'NF{printf "%.0f", $1/1048576}')
 case "$MB" in ''|*[!0-9]*) echo "ABORT: measurement failed for $SLUG (got '${MB}')"; exit 1;; esac
 echo "$SLUG measured ${MB}MB"
 
