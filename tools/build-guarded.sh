@@ -24,11 +24,16 @@ if [ -f "$HOME/.claude/netbudget/STOP_NETWORK" ]; then
 fi
 
 # --- measure, and insist on a real number
-PINNED=$(curl -sI --max-time 25 "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
-         | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r' | sed 's:/*$::')
+# Resolve AND measure with a 1-byte range GET. HEAD is unusable here:
+# Geofabrik's cache intermittently 301s -latest to itself with a trailing
+# slash, looping forever, while GET follows to the dated file correctly.
+HDR=$(curl -sL --max-time 30 -r 0-0 -D - -o /dev/null \
+      -w 'EFFECTIVE %{url_effective}\n' \
+      "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf")
+PINNED=$(printf '%s\n' "$HDR" | awk '/^EFFECTIVE /{print $2}' | tr -d '\r' | sed 's:/*$::')
 if [ -z "$PINNED" ]; then echo "ABORT: could not resolve $SLUG to a dated url"; exit 1; fi
-MB=$(curl -sI --max-time 25 "$PINNED" | awk 'tolower($1)=="content-length:"{print $2}' \
-     | tr -cd '0-9' | awk '{printf "%.0f", $1/1048576}')
+MB=$(printf '%s\n' "$HDR" | awk 'tolower($1)=="content-range:"{print $2}' \
+     | awk -F/ '{print $2}' | tr -cd '0-9' | tail -1 | awk '{printf "%.0f", $1/1048576}')
 case "$MB" in ''|*[!0-9]*) echo "ABORT: measurement failed for $SLUG (got '${MB}')"; exit 1;; esac
 echo "$SLUG measured ${MB}MB"
 

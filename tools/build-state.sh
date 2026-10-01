@@ -20,8 +20,10 @@ if ! osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null 2>&1; then
   # Resolve -latest to its DATED url. That file never changes, so resuming
   # against it is safe; resuming against -latest is what corrupts a download
   # when the daily rebuild lands mid-transfer.
-  PINNED=$(curl -sI "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
-           | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r' | sed 's:/*$::')
+  # Range GET, not HEAD: their cache loops HEAD on -latest (see build-guarded).
+  PINNED=$(curl -sL --max-time 30 -r 0-0 -o /dev/null -w '%{url_effective}' \
+           "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
+           | tr -d '\r' | sed 's:/*$::')
   [ -n "$PINNED" ] || PINNED="https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf"
   STAMP="states-src/$SLUG.url"
   if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PINNED" ] && [ -f "states-src/$SLUG.osm.pbf.part" ]; then
