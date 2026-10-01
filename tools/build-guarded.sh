@@ -25,7 +25,7 @@ fi
 
 # --- measure, and insist on a real number
 PINNED=$(curl -sI --max-time 25 "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
-         | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r')
+         | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r' | sed 's:/*$::')
 if [ -z "$PINNED" ]; then echo "ABORT: could not resolve $SLUG to a dated url"; exit 1; fi
 MB=$(curl -sI --max-time 25 "$PINNED" | awk 'tolower($1)=="content-length:"{print $2}' \
      | tr -cd '0-9' | awk '{printf "%.0f", $1/1048576}')

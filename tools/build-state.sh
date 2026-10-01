@@ -21,7 +21,7 @@ if ! osmium fileinfo "states-src/$SLUG.osm.pbf" >/dev/null 2>&1; then
   # against it is safe; resuming against -latest is what corrupts a download
   # when the daily rebuild lands mid-transfer.
   PINNED=$(curl -sI "https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf" \
-           | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r')
+           | awk '/^[Ll]ocation:/{print $2}' | tr -d '\r' | sed 's:/*$::')
   [ -n "$PINNED" ] || PINNED="https://download.geofabrik.de/north-america/us/$SLUG-latest.osm.pbf"
   STAMP="states-src/$SLUG.url"
   if [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$PINNED" ] && [ -f "states-src/$SLUG.osm.pbf.part" ]; then
