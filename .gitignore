@@ -1,7 +1,9 @@
-data/
-site/atl.pmtiles
-site/fonts/
 .DS_Store
-site/tiles/
-data/states-src/
+data/
 data/search-src/
+data/states-src/
+site/atl.pmtiles
+site/boundaries.pmtiles
+site/fonts/
+site/search/
+site/tiles/
