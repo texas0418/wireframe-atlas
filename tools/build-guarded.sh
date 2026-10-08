@@ -19,11 +19,6 @@ elif [ "$H" -ge 23 ] || [ "$H" -lt 11 ]; then CARRIER=wifi; METERED=no
 else CARRIER=wifi; METERED=yes; fi
 echo "carrier=$CARRIER metered=$METERED time=$(date +%H:%M)"
 
-if [ -f "$HOME/.claude/netbudget/STOP_NETWORK" ]; then
-  echo "ABORT: data gate is armed; Simon clears it"; exit 1
-fi
-
-# --- measure, and insist on a real number
 # Resolve + measure via the shared resolver (handles Geofabrik's flaky
 # -latest alias by falling back to the directory index).
 RES=$(bash tools/resolve-extract.sh "$SLUG") || { echo "ABORT: could not resolve $SLUG"; exit 1; }
@@ -39,7 +34,9 @@ if [ "$METERED" = yes ]; then
   if [ "$MB" -ge "$QUOTE" ]; then
     echo "ABORT: ${MB}MB download does not fit a ${QUOTE}MB quote (leave room for chat)"; exit 1
   fi
-  ~/Documents/scripts/netbudget.sh start "$QUOTE" "atlas-$SLUG" 2>&1 | tail -1
+  # netbudget was retired 2026-10-04 (no-op stub). capwatch.sh is the real
+  # enforcement; jobreg registers this transfer so it can cut Wi-Fi at +20%.
+  ~/Documents/data-usage/jobreg.sh "atlas-$SLUG" "$QUOTE" 2>&1 | tail -1
 fi
 
 bash tools/build-state.sh "$SLUG" >"/tmp/atlas-$SLUG.log" 2>&1
@@ -49,5 +46,5 @@ else
   echo "$SLUG FAILED: $(tail -2 "/tmp/atlas-$SLUG.log" | tr '\n' ' ')"
 fi
 echo "files: $(ls site/tiles/*.pmtiles | wc -l | tr -d ' ')  total: $(du -sh site/tiles | cut -f1)"
-[ "$METERED" = yes ] && ~/Documents/scripts/netbudget.sh stop 2>&1 | tail -1
+[ "$METERED" = yes ] && ~/Documents/data-usage/jobreg.sh --end "atlas-$SLUG" 2>&1 | tail -1
 exit 0
