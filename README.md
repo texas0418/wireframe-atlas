@@ -76,5 +76,9 @@ Viewers stream only the tiles they look at, typically a few hundred KB per view.
 roads, buildings, parks, parklabels, pois, rails (+ runways), water, waterway,
 places. Tiles z5-z14, overzoomed beyond.
 
-Data © OpenStreetMap contributors (ODbL). Boundaries from Natural Earth (public
-domain). Glyphs from openmaptiles/fonts (OFL).
+## Licence
+
+This project's own code is MIT. The vendored libraries, the OpenStreetMap data
+the tiles are derived from (ODbL, share-alike), Natural Earth boundaries (public
+domain) and the Noto glyphs (OFL) keep their own terms. See `LICENSE` for the
+breakdown — the ODbL obligations attach to anyone redistributing the tiles.

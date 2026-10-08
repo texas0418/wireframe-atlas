@@ -1,0 +1,61 @@
+MIT License
+
+Copyright (c) 2026 Simon Shih
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+THIRD-PARTY COMPONENTS
+
+The MIT grant above covers this project's own code: the build pipeline in
+tools/, the page in site/index.html, and the documentation. It does NOT
+relicense the following, which carry their own terms and are redistributed
+here or fetched at build time.
+
+Bundled in this repository
+--------------------------
+site/vendor/maplibre-gl.js, site/vendor/maplibre-gl.css
+    MapLibre GL JS — BSD-3-Clause.
+    https://github.com/maplibre/maplibre-gl-js
+
+site/vendor/pmtiles.js
+    PMTiles (Protomaps) — BSD-3-Clause.
+    https://github.com/protomaps/PMTiles
+
+Produced by the build, not in this repository
+---------------------------------------------
+site/tiles/*.pmtiles, site/search/*.bin
+    Derived from OpenStreetMap data, © OpenStreetMap contributors, licensed
+    under the Open Database License (ODbL) 1.0. Any distribution of these
+    tiles or of a database derived from them carries ODbL obligations,
+    including attribution and share-alike. The rendered map attributes
+    OpenStreetMap on screen; that attribution is a licence condition, not
+    decoration. https://www.openstreetmap.org/copyright
+
+site/boundaries.pmtiles
+    Derived from Natural Earth (coastline, boundaries, state lines, lakes),
+    which is in the public domain. https://www.naturalearthdata.com
+
+site/fonts/
+    Noto Sans glyph ranges from openmaptiles/fonts — SIL Open Font License 1.1.
+    https://github.com/openmaptiles/fonts
+
+Note that copying site/index.html alone still carries the MapLibre and PMTiles
+terms, because the page loads those vendored files.
