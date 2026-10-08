@@ -12,9 +12,12 @@ QUOTE=${2:-0}
 cd "$(dirname "$0")/.."
 
 # --- carrier: wired and the free window are both unmetered
+# ATLAS_UNMETERED=1 for a known-uncapped line (shore leave at home, a
+# friend's wifi). The time window below only describes the VESSEL's plan.
 WIFI_IP=$(ipconfig getifaddr en0 2>/dev/null)
 H=$(date +%H)
-if [ -z "$WIFI_IP" ]; then CARRIER=wired; METERED=no
+if [ "${ATLAS_UNMETERED:-0}" = 1 ]; then CARRIER=${WIFI_IP:+wifi}; CARRIER=${CARRIER:-wired}; METERED=no
+elif [ -z "$WIFI_IP" ]; then CARRIER=wired; METERED=no
 elif [ "$H" -ge 23 ] || [ "$H" -lt 11 ]; then CARRIER=wifi; METERED=no
 else CARRIER=wifi; METERED=yes; fi
 echo "carrier=$CARRIER metered=$METERED time=$(date +%H:%M)"
