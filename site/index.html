@@ -117,7 +117,6 @@ const style = {
   version: 8,
   glyphs: BASE + "fonts/{fontstack}/{range}.pbf",
   sources: {
-    atl: { type: "vector", url: "pmtiles://" + TILES + "atl.pmtiles?v=5" },
     ne: { type: "vector", url: "pmtiles://" + TILES + "boundaries.pmtiles?v=1" }
   },
   layers: [
@@ -137,104 +136,114 @@ const style = {
         "line-width":["interpolate",["linear"],["zoom"],3,.5,8,1.2],
         "line-opacity":["interpolate",["linear"],["zoom"],3,.5,7.5,.5,9.5,0],
         "line-dasharray":[4,2] } },
-    { id:"water", type:"fill", source:"atl", "source-layer":"water",
-      paint:{ "fill-color":"#04161f", "fill-outline-color":"#11566d" } },
-    { id:"waterway", type:"line", source:"atl", "source-layer":"waterway",
-      paint:{ "line-color":"#11566d", "line-width":["interpolate",["linear"],["zoom"],9,.5,15,2] } },
-
-    { id:"park", type:"fill", source:"atl", "source-layer":"parks",
-      paint:{ "fill-color":"rgba(28,94,62,.16)" } },
-    { id:"park-line", type:"line", source:"atl", "source-layer":"parks",
-      paint:{ "line-color":"#2f8f66", "line-opacity":.45,
-        "line-width":["interpolate",["linear"],["zoom"],10,.4,16,1.4] } },
-
-    { id:"bldg", type:"fill-extrusion", source:"atl", "source-layer":"buildings", minzoom:13,
-      paint:{
-        "fill-extrusion-color":["interpolate",["linear"], bldgHeight,
-          4,"#07242e", 25,"#0d3644", 80,"#155466", 200,"#1f7c94"],
-        "fill-extrusion-height": bldgHeight,
-        "fill-extrusion-opacity":.92,
-        "fill-extrusion-vertical-gradient":true } },
-    { id:"bldg-line", type:"line", source:"atl", "source-layer":"buildings", minzoom:14,
-      paint:{ "line-color":"#2fa8c9",
-        "line-opacity":["interpolate",["linear"],["zoom"],14,.25,16,.8],
-        "line-width":.6 } },
-
-    { id:"rail", type:"line", source:"atl", "source-layer":"rails",
-      filter:["has","railway"],
-      paint:{ "line-color":"#8f9bff", "line-opacity":.55,
-        "line-dasharray":[3,2],
-        "line-width":["interpolate",["linear"],["zoom"],9,.6,15,2] } },
-    { id:"aero", type:"line", source:"atl", "source-layer":"rails",
-      filter:["has","aeroway"],
-      paint:{ "line-color":"#dff6ff",
-        "line-opacity":["match",["get","aeroway"],"runway",.9,.45],
-        "line-width":["interpolate",["exponential",1.6],["zoom"],
-          9, ["match",["get","aeroway"],"runway",1.5,.5],
-          15,["match",["get","aeroway"],"runway",14,3]] } },
-
-    { id:"road-glow", type:"line", source:"atl", "source-layer":"roads",
-      filter:["in", ["get","highway"], ["literal", majors.concat(primaries)]],
-      paint:{ "line-color": roadColor, "line-width":["interpolate",["exponential",1.6],["zoom"],8,3,16,16],
-        "line-blur":6, "line-opacity":.35 } },
-    { id:"road", type:"line", source:"atl", "source-layer":"roads",
-      paint:{ "line-color": roadColor, "line-width": roadWidth,
-        "line-opacity":["interpolate",["linear"],["zoom"],8,.85,14,1] } },
-
-    { id:"road-label", type:"symbol", source:"atl", "source-layer":"roads", minzoom:14,
-      filter:["has","name"],
-      layout:{ "symbol-placement":"line", "text-field":["get","name"],
-        "text-font":["Noto Sans Regular"], "symbol-spacing":380,
-        "text-size":["interpolate",["linear"],["zoom"],14,12,17,16] },
-      paint:{ "text-color":"#b8e4f2", "text-halo-color":"#000", "text-halo-width":2, "text-opacity":.95 } },
-
-    { id:"poi-dot", type:"circle", source:"atl", "source-layer":"pois", minzoom:14.5,
-      paint:{ "circle-radius":["interpolate",["linear"],["zoom"],14.5,1,17,2.4],
-        "circle-color": ["case",
-          ["has","shop"], "#7fe7ff",
-          ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffb14e",
-          ["has","tourism"], "#c9a0ff",
-          "#d8f4ff"],
-        "circle-opacity":["interpolate",["linear"],["zoom"],14.5,.35,16,.85] } },
-    // Labels arrive a half zoom after the dots and fade up, so the buildings
-    // read first. text-optional lets a name drop rather than shove its dot;
-    // the padding is what thins Manhattan without touching sparser cities.
-    { id:"poi-label", type:"symbol", source:"atl", "source-layer":"pois", minzoom:16,
-      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":["interpolate",["linear"],["zoom"],16,9.5,18,12],
-        "text-offset":[0,.9], "text-anchor":"top", "text-optional":true,
-        "text-padding":["interpolate",["linear"],["zoom"],16,9,18,4] },
-      paint:{ "text-color": ["case",
-          ["has","shop"], "#9feaff",
-          ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffc97e",
-          ["has","tourism"], "#d7baff",
-          "#e8f8ff"],
-        "text-halo-color":"#000", "text-halo-width":1.5,
-        "text-opacity":["interpolate",["linear"],["zoom"],16,0,16.6,.92] } },
-
-    { id:"park-label", type:"symbol", source:"atl", "source-layer":"parklabels", minzoom:11.5,
-      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":["interpolate",["linear"],["zoom"],11.5,10,16,13],
-        "text-letter-spacing":.12, "text-max-width":8 },
-      paint:{ "text-color":"#7fd6a8", "text-halo-color":"#000", "text-halo-width":1.6, "text-opacity":.9 } },
-
-    { id:"place-suburb", type:"symbol", source:"atl", "source-layer":"places", minzoom:11,
-      filter:["in",["get","place"],["literal",["suburb","village"]]],
-      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":10, "text-letter-spacing":.25, "text-transform":"uppercase" },
-      paint:{ "text-color":"#6fb7c9", "text-halo-color":"#000", "text-halo-width":1.4, "text-opacity":.75 } },
-    { id:"place-town", type:"symbol", source:"atl", "source-layer":"places", minzoom:9,
-      filter:["==",["get","place"],"town"],
-      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":12, "text-letter-spacing":.3, "text-transform":"uppercase" },
-      paint:{ "text-color":"#9fdcec", "text-halo-color":"#000", "text-halo-width":1.6 } },
-    { id:"place-city", type:"symbol", source:"atl", "source-layer":"places",
-      filter:["==",["get","place"],"city"],
-      layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
-        "text-size":["interpolate",["linear"],["zoom"],5,10.5,8,13,13,20], "text-letter-spacing":.4, "text-transform":"uppercase" },
-      paint:{ "text-color":"#d8f4ff", "text-halo-color":"#000", "text-halo-width":2 } }
+    // Everything data-driven is added per state from LAYER_TEMPLATES.
+    // This invisible layer is the seam: fills and lines go above it,
+    // symbols below it, so labels from every state stay on top.
+    { id:"symbol-seam", type:"background", paint:{ "background-opacity":0 } }
   ]
 };
+
+// Layer specs, one per rendered thing. Not attached to any source — every
+// state clones these onto its own tile file. Georgia used to own them,
+// which is why it was the one state split across two files.
+const LAYER_TEMPLATES = [
+  { id:"water", type:"fill", "source-layer":"water",
+    paint:{ "fill-color":"#04161f", "fill-outline-color":"#11566d" } },
+  { id:"waterway", type:"line", "source-layer":"waterway",
+    paint:{ "line-color":"#11566d", "line-width":["interpolate",["linear"],["zoom"],9,.5,15,2] } },
+
+  { id:"park", type:"fill", "source-layer":"parks",
+    paint:{ "fill-color":"rgba(28,94,62,.16)" } },
+  { id:"park-line", type:"line", "source-layer":"parks",
+    paint:{ "line-color":"#2f8f66", "line-opacity":.45,
+      "line-width":["interpolate",["linear"],["zoom"],10,.4,16,1.4] } },
+
+  { id:"bldg", type:"fill-extrusion", "source-layer":"buildings", minzoom:13,
+    paint:{
+      "fill-extrusion-color":["interpolate",["linear"], bldgHeight,
+        4,"#07242e", 25,"#0d3644", 80,"#155466", 200,"#1f7c94"],
+      "fill-extrusion-height": bldgHeight,
+      "fill-extrusion-opacity":.92,
+      "fill-extrusion-vertical-gradient":true } },
+  { id:"bldg-line", type:"line", "source-layer":"buildings", minzoom:14,
+    paint:{ "line-color":"#2fa8c9",
+      "line-opacity":["interpolate",["linear"],["zoom"],14,.25,16,.8],
+      "line-width":.6 } },
+
+  { id:"rail", type:"line", "source-layer":"rails",
+    filter:["has","railway"],
+    paint:{ "line-color":"#8f9bff", "line-opacity":.55,
+      "line-dasharray":[3,2],
+      "line-width":["interpolate",["linear"],["zoom"],9,.6,15,2] } },
+  { id:"aero", type:"line", "source-layer":"rails",
+    filter:["has","aeroway"],
+    paint:{ "line-color":"#dff6ff",
+      "line-opacity":["match",["get","aeroway"],"runway",.9,.45],
+      "line-width":["interpolate",["exponential",1.6],["zoom"],
+        9, ["match",["get","aeroway"],"runway",1.5,.5],
+        15,["match",["get","aeroway"],"runway",14,3]] } },
+
+  { id:"road-glow", type:"line", "source-layer":"roads",
+    filter:["in", ["get","highway"], ["literal", majors.concat(primaries)]],
+    paint:{ "line-color": roadColor, "line-width":["interpolate",["exponential",1.6],["zoom"],8,3,16,16],
+      "line-blur":6, "line-opacity":.35 } },
+  { id:"road", type:"line", "source-layer":"roads",
+    paint:{ "line-color": roadColor, "line-width": roadWidth,
+      "line-opacity":["interpolate",["linear"],["zoom"],8,.85,14,1] } },
+
+  { id:"road-label", type:"symbol", "source-layer":"roads", minzoom:14,
+    filter:["has","name"],
+    layout:{ "symbol-placement":"line", "text-field":["get","name"],
+      "text-font":["Noto Sans Regular"], "symbol-spacing":380,
+      "text-size":["interpolate",["linear"],["zoom"],14,12,17,16] },
+    paint:{ "text-color":"#b8e4f2", "text-halo-color":"#000", "text-halo-width":2, "text-opacity":.95 } },
+
+  { id:"poi-dot", type:"circle", "source-layer":"pois", minzoom:14.5,
+    paint:{ "circle-radius":["interpolate",["linear"],["zoom"],14.5,1,17,2.4],
+      "circle-color": ["case",
+        ["has","shop"], "#7fe7ff",
+        ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffb14e",
+        ["has","tourism"], "#c9a0ff",
+        "#d8f4ff"],
+      "circle-opacity":["interpolate",["linear"],["zoom"],14.5,.35,16,.85] } },
+  // Labels arrive a half zoom after the dots and fade up, so the buildings
+  // read first. text-optional lets a name drop rather than shove its dot;
+  // the padding is what thins Manhattan without touching sparser cities.
+  { id:"poi-label", type:"symbol", "source-layer":"pois", minzoom:16,
+    layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+      "text-size":["interpolate",["linear"],["zoom"],16,9.5,18,12],
+      "text-offset":[0,.9], "text-anchor":"top", "text-optional":true,
+      "text-padding":["interpolate",["linear"],["zoom"],16,9,18,4] },
+    paint:{ "text-color": ["case",
+        ["has","shop"], "#9feaff",
+        ["in",["get","amenity"],["literal",["restaurant","cafe","bar","pub","fast_food","food_court","ice_cream","nightclub"]]], "#ffc97e",
+        ["has","tourism"], "#d7baff",
+        "#e8f8ff"],
+      "text-halo-color":"#000", "text-halo-width":1.5,
+      "text-opacity":["interpolate",["linear"],["zoom"],16,0,16.6,.92] } },
+
+  { id:"park-label", type:"symbol", "source-layer":"parklabels", minzoom:11.5,
+    layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+      "text-size":["interpolate",["linear"],["zoom"],11.5,10,16,13],
+      "text-letter-spacing":.12, "text-max-width":8 },
+    paint:{ "text-color":"#7fd6a8", "text-halo-color":"#000", "text-halo-width":1.6, "text-opacity":.9 } },
+
+  { id:"place-suburb", type:"symbol", "source-layer":"places", minzoom:11,
+    filter:["in",["get","place"],["literal",["suburb","village"]]],
+    layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+      "text-size":10, "text-letter-spacing":.25, "text-transform":"uppercase" },
+    paint:{ "text-color":"#6fb7c9", "text-halo-color":"#000", "text-halo-width":1.4, "text-opacity":.75 } },
+  { id:"place-town", type:"symbol", "source-layer":"places", minzoom:9,
+    filter:["==",["get","place"],"town"],
+    layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+      "text-size":12, "text-letter-spacing":.3, "text-transform":"uppercase" },
+    paint:{ "text-color":"#9fdcec", "text-halo-color":"#000", "text-halo-width":1.6 } },
+  { id:"place-city", type:"symbol", "source-layer":"places",
+    filter:["==",["get","place"],"city"],
+    layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"],
+      "text-size":["interpolate",["linear"],["zoom"],5,10.5,8,13,13,20], "text-letter-spacing":.4, "text-transform":"uppercase" },
+    paint:{ "text-color":"#d8f4ff", "text-halo-color":"#000", "text-halo-width":2 } }
+];
 
 const map = new maplibregl.Map({
   container:"map", style, hash:true,
@@ -275,20 +284,14 @@ document.getElementById("bnorth").onclick = ()=> map.easeTo({ bearing:0, duratio
 document.getElementById("bhome").onclick = ()=> map.flyTo({ center:[-84.390,33.755], zoom:15.2, pitch:60, bearing:-17, duration:2600 });
 
 // ---- Skeleton states: one tile file per state, discovered via manifest ----
-const SKEL_LAYERS = ["water","waterway","park","park-line","bldg","bldg-line",
-                     "rail","aero","road-glow","road","poi-dot","road-label",
-                     "poi-label","park-label","place-suburb","place-town","place-city"];
 function addStateSource(slug, v){
   const src = "st-" + slug;
   if (map.getSource(src)) return;
   map.addSource(src, { type:"vector", url:"pmtiles://" + TILES + "tiles/" + slug + ".pmtiles?v=" + v });
-  const layers = map.getStyle().layers;
-  SKEL_LAYERS.forEach(id => {
-    const base = layers.find(l => l.id === id);
-    if (!base) return;
-    const c = JSON.parse(JSON.stringify(base));
-    c.id = src + "-" + id; c.source = src;
-    map.addLayer(c, c.type === "symbol" ? undefined : "road-label");
+  LAYER_TEMPLATES.forEach(spec => {
+    const c = JSON.parse(JSON.stringify(spec));
+    c.id = src + "-" + c.id; c.source = src;
+    map.addLayer(c, c.type === "symbol" ? undefined : "symbol-seam");
   });
 }
 fetch(TILES + "tiles/manifest.json?cb=" + Date.now())

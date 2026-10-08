@@ -10,10 +10,16 @@ Live: https://atlas.simonbuilds.app
 
 ## Architecture
 
-One tile file per state in `site/tiles/<slug>.pmtiles` (51 files, ~8.4GB), plus
-`tiles/manifest.json` listing which states exist. The page reads the manifest and
-clones its style layers onto each state source, so adding a state is a file drop
-and a manifest bump — no page change.
+One tile file per state in `site/tiles/<slug>.pmtiles` (51 files, ~8.6GB), plus
+`tiles/manifest.json` listing which states exist. Every state is identical in
+shape: nine layers, one file, no special cases.
+
+The page holds `LAYER_TEMPLATES`, a list of layer specs bound to no source.
+On load it reads the manifest and clones the templates onto each state's
+source, so adding a state is a file drop and a manifest bump with no page
+change. Non-symbol layers are inserted below an invisible `symbol-seam`
+layer and symbols above it, which keeps every state's labels on top of every
+state's geometry.
 
 Tiles are served from Cloudflare R2 at `tiles.simonbuilds.app`; the page, fonts and
 search index stay on SiteGround. `index.html` only points at R2 when it is running
